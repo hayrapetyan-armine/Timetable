@@ -66,8 +66,13 @@ class Configuration:
                         self.courseClasses.append(c)
         input.close()
         self.isEmpty = False
-        return self.studentGroups;
-        print("asdffffff", len(self.courseClasses))
+        print("parse: ", self.professors)
+        print("groups: ", self.studentGroups)
+        print("courses: ", self.courses)
+        print("rooms: ", self.rooms)
+        print("courseclasses: ", self.courseClasses)
+       # return self.studentGroups;
+       # print("asdffffff", len(self.courseClasses))
         
     # Returns pointer to professor with specified ID
     # If there is no professor with such ID method returns NULL
@@ -84,9 +89,9 @@ class Configuration:
     # Returns pointer to student group with specified ID
     # If there is no student group with such ID method returns NULL
     def GetStudentsGroupById(self, id):
-        print("in student groups", id)
+      #  print("in student groups", id)
         if id in self.studentGroups.keys():
-            print("value: ", self.studentGroups[id])
+        #    print("value: ", self.studentGroups[id])
             return self.studentGroups[id]
         return None    
         
@@ -269,7 +274,8 @@ class Configuration:
         # make object and return pointer to it
         if number == 0:
             return None
-        
+
+        print("lab: ", lab, name)
         return Room.Room( name, lab, number )
     
     # Reads class' data from config file, makes object and returns pointer to it

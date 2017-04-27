@@ -7,7 +7,11 @@ class Room:
         global nextRoomId
         self.id = nextRoomId
         self.name = name
-        self.lab = lab
+        if lab == 'true':
+            self.lab = True
+        else:
+            self.lab = False
+        print("laaab: ", name, lab, self.lab, self.id)
         self.numberOfSeats = numberOfSeats
         nextRoomId = nextRoomId + 1
 

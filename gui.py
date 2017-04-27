@@ -57,8 +57,6 @@ class Algorithm:
 
     # Start
     def Start(self):
-        # clear best chromosome group from previous execution
-        #ClearBest()
         # initialize new population with chromosomes randomly built using prototypes
         for it in range(len(self.chromosomes)):
             # remove chromosomes from previous execution
@@ -75,7 +73,7 @@ class Algorithm:
 
         while 1:
             best = self.GetBestChromosome()
-            print("best", best.GetFitness(), best.score, len(best.classes.keys()))
+            print("best", best.GetFitness())
             # algorithm has reached criteria?
             if best.GetFitness() >= 1:
                 print("best", best.GetFitness(), best.score)
@@ -122,7 +120,7 @@ class Algorithm:
     def AddToBest(self, chromosomeIndex):
         # don't add if new chromosome hasn't fitness enough big
         # for best chromosome group or it is already in the group
-
+      #  print("current: ", self.chromosomes[ chromosomeIndex ].GetFitness())
       # and (not self.chromosomes[self.bestChromosomes[self.currentBestSize - 1]] is None) and
        # print("chromosomeIndex", chromosomeIndex, self.chromosomes[ chromosomeIndex ].GetFitness())
         if ( self.currentBestSize == len(self.bestChromosomes) and self.chromosomes[self.bestChromosomes[self.currentBestSize - 1]].GetFitness() >= \
@@ -175,7 +173,7 @@ class Algorithm:
 
 
 # Number of working hours per day
-DAY_HOURS = 12
+DAY_HOURS = 4
 # Number of days in week
 DAYS_NUM = 5
 
@@ -233,6 +231,7 @@ class Schedule:
         c.mutationSize = self.mutationSize
         c.crossoverProbability = self.crossoverProbability
         c.mutationProbability = self.mutationProbability
+        c.score = self.score
 
         return c
                 
@@ -318,7 +317,6 @@ class Schedule:
                         n.slots[ it1 + k ] = [ list(self.classes.keys())[ j ] ]
                     else:
                         n.slots[ it1 + k ].append( list(self.classes.keys())[ j ] )
-                   # print("k = ", k)
             else:
                 # insert class from second parent into new chromosome's class table
                 if j >= len(list(parent2.classes.keys())):
@@ -338,15 +336,7 @@ class Schedule:
                 first = not first
 
             j = j + 1
-           # print("j = ", j)
-           # if j >= len(list(self.classes.keys())) or j >= len(list(parent2.classes.keys())):
-           #     break
-           # it1 = self.classes[ list(self.classes.keys())[ j ] ]
-          #  it2 = parent2.classes[ list(parent2.classes.keys())[ j ] ]
 
-      #  print("crossover", len(n.classes), n.classes)
-       # print("n.slots: ", len(n.slots))
-       # print("crossover", len(n.classes))
         n.CalculateFitness()
 
         # return smart pointer to offspring
@@ -444,7 +434,7 @@ class Schedule:
             #print('day', p, day, daySize, time, room, DAY_HOURS)
             #print("classes", i, self.classes[i])
             dur = i.GetDuration()
-           # print("self.slots[i] ", i, dur, self.slots[i], self.slots[p])
+        #    print("self.slots[i] ", i, dur)
 
             # check for room overlapping of classes
             ro = False
@@ -489,7 +479,7 @@ class Schedule:
                 for l in range( dur - 1, -1, -1 ):
                     if breakPoint == True: break
                     # check for overlapping with other classes at same time
-                   # print("slots", len(self.slots), t, k)
+                   # print("slots", len(self.slots), t, k, l)
                     cl = self.slots[ t + l ]
                     if not cl is None:
                         for it in cl:
@@ -597,7 +587,7 @@ class Example(QMainWindow):
             best = False
 
     def paintEvent(self, e):
-        print("paint event", test)
+        print("paint event")
         if test == "test":
             return
         qp = QPainter()
@@ -607,16 +597,13 @@ class Example(QMainWindow):
 
     def drawRectangles(self, qp):
         DAYS_NUM = 5
-        DAY_HOURS = 12
+        DAY_HOURS = 4
         
         GROUP_CELL_WIDTH = 95
         GROUP_CELL_HEIGHT = 50
 
         GROUP_MARGIN_WIDTH = 50
         GROUP_MARGIN_HEIGHT = 50
-
-        DAYS_NUM = 5
-        DAY_HOURS = 12
 
         GROUP_COLUMN_NUMBER = DAYS_NUM + 1
         GROUP_ROW_NUMBER = DAY_HOURS + 1
@@ -688,11 +675,11 @@ class Example(QMainWindow):
                 t = p % ( numberOfRooms * DAY_HOURS )
                 d = p // ( numberOfRooms * DAY_HOURS ) + 1
                 r = t // DAY_HOURS
+                print("asdffdsfdfd", t, DAY_HOURS, instance.GetRoomById(r).GetName())
                 t = t % DAY_HOURS + 1
 
-                print("time: ", d, r, t)
-                print("room: ", instance.rooms[0].GetName())
                 grNumber = 0
+                info = ''
                 for k in range(0, numberOfGroups):
                     for l in c.GetGroups():
                         if l == instance.GetStudentsGroupById(str(k + 1)):
@@ -710,6 +697,7 @@ class Example(QMainWindow):
 
                             info = c.GetCourse().GetName() + "\n" + c.GetProfessor().GetName() + "\n"
                             info += instance.GetRoomById(r).GetName() + " "
+                            print("course: ", c.GetCourse().GetName(), c.IsLabRequired())
                             if c.IsLabRequired():
                                 info += "Lab\n"
 
@@ -738,3 +726,9 @@ if __name__ == '__main__':
     ex = Example()
     sys.exit(app.exec_())
 
+##global instance
+##instance = Configuration()
+##instance.Parsefile("ase.cfg")
+##prototype = Schedule(2, 2, 80, 3)
+##instanceObj = Algorithm(100, 8, 5, prototype )
+##bestChromosome = instanceObj.Start()
