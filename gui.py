@@ -5,14 +5,12 @@ from PyQt5.QtGui import QIcon
 from Configuration import Configuration
 from PyQt5.QtCore import QObject, pyqtSignal
 from functools import partial
-#from Room import Room
-#from Algorithm import Algorithm
 
 from CourseClass import CourseClass
-#from Configuration import Configuration
 import copy
 import random
 from random import randint
+from threading import Thread
 
 # Genetic algorithm
 class Algorithm:
@@ -86,10 +84,8 @@ class Algorithm:
                 # selects parent randomly
                 a = randint(0, 327670) % lengthOfChromosomes
                 b = randint(0, 327670) % lengthOfChromosomes
-              #  print("a = ", a, b, len(self.chromosomes[ a ].classes), len(self.chromosomes[ b ].classes))
                 p1 = self.chromosomes[ a ]
                 p2 = self.chromosomes[ b ]
-               # print("p1 and p2", len(p1.classes),len(self.chromosomes[ a ].classes), len(p2.classes),len(self.chromosomes[ b ].classes), j)
                 offspring[j] = p1.Crossover(p2)
                 offspring[j].Mutation()
 
@@ -102,15 +98,12 @@ class Algorithm:
                     ci = randint(0, 32767) % len(self.chromosomes)
 
                 # replace chromosome
-                # delete self.chromosomes[ci]
-                #print("self.chromosomes[ci]", self.chromosomes[ci])
                 self.chromosomes[ ci ] = offspring[ j ]
 
                 # try to add new chromosomes in best chromosome group
                 self.AddToBest( ci )
 
             self.currentGeneration = self.currentGeneration + 1
-           # print("currentGeneration: ", self.currentGeneration)
             
     # Returns pointer to best chromosomes in population
     def GetBestChromosome(self):
@@ -120,9 +113,6 @@ class Algorithm:
     def AddToBest(self, chromosomeIndex):
         # don't add if new chromosome hasn't fitness enough big
         # for best chromosome group or it is already in the group
-      #  print("current: ", self.chromosomes[ chromosomeIndex ].GetFitness())
-      # and (not self.chromosomes[self.bestChromosomes[self.currentBestSize - 1]] is None) and
-       # print("chromosomeIndex", chromosomeIndex, self.chromosomes[ chromosomeIndex ].GetFitness())
         if ( self.currentBestSize == len(self.bestChromosomes) and self.chromosomes[self.bestChromosomes[self.currentBestSize - 1]].GetFitness() >= \
            self.chromosomes[ chromosomeIndex ].GetFitness() ) or self.bestFlags[ chromosomeIndex ]:
               return
@@ -130,22 +120,17 @@ class Algorithm:
         # find place for new chromosome
         i = self.currentBestSize
         j = 0
-       # print("self.currentBestSize", self.currentBestSize)
         for i in range( self.currentBestSize, 0, -1 ):
             # group is not full?
             if i < len( self.bestChromosomes ):
                 # position of new chromosome is found?
-                # (not self.chromosomes[ self.bestChromosomes[ i - 1 ] ] is None) and
-              #  print("fitnessses: ", self.chromosomes[ self.bestChromosomes[ i - 1 ] ].GetFitness(), self.chromosomes[ chromosomeIndex ].GetFitness())
                 if  self.chromosomes[ self.bestChromosomes[ i - 1 ] ].GetFitness() > \
                    self.chromosomes[ chromosomeIndex ].GetFitness():
                     j = i
                     break
 
                 # move chromosomes to make room for new
-              #  print("move chromosome", self.bestChromosomes[ i ])
                 self.bestChromosomes[ i ] = self.bestChromosomes[ i - 1 ]
-              #  print("i2 = ", i)
             else:
                 # group is full remove worst chromosomes in the group
                 self.bestFlags[ self.bestChromosomes[ i - 1 ] ] = False
@@ -154,7 +139,6 @@ class Algorithm:
         # store chromosome in best chromosome group
         self.bestChromosomes[ j ] = chromosomeIndex
         self.bestFlags[ chromosomeIndex ] = True
-      #  print("aaaa", self.bestChromosomes[ 0 ])
         
         # increase current size if it has not reached the limit yet
         if self.currentBestSize < len(self.bestChromosomes):
@@ -240,16 +224,12 @@ class Schedule:
     def MakeNewFromPrototype(self):
             # number of time-space slots
             size = len(self.slots)
-            #print("size if slots: ")
             # make new chromosome, copy chromosome setup
             newChromosome = self.copy(True)
-           # newChromosome.classes = {}
             # place classes at random position
             c = instance.GetCourseClasses()
             nr = instance.GetNumberOfRooms()
             maxLength = nr * DAY_HOURS * DAYS_NUM
-            # newChromosome.slots = [None] * maxLength
-         #   print("length of c: ", len(c))
             for it in c:
                 # determine random position of class
                 dur = it.GetDuration()
@@ -259,8 +239,6 @@ class Schedule:
                 pos = day * nr * DAY_HOURS + room * DAY_HOURS + time
                 newChromosome.classes[ it ] = pos
                         
-              #  print("duration: ", dur)
-                #print("it in c: ", dur, day, room, time, pos)
                 # fill time-space slots, for each hour of class
                 for i in range( dur - 1, -1, -1 ):
                     if newChromosome.slots[ pos + i ] is None:
@@ -270,9 +248,7 @@ class Schedule:
 
                 # insert in class table of chromosome
                 newChromosome.classes[ it ] = pos
-               # print("slots and class at position: ", pos, newChromosome.slots[ pos ], newChromosome.classes[ pos ])
 
-           # print("lengthofclasses", len(newChromosome.classes))
             newChromosome.CalculateFitness()
 
             # return smart pointer
@@ -388,10 +364,7 @@ class Schedule:
                         self.slots[ pos2 + j ].append( cc1 )
 
                 # change entry of class table to point to new time-space slots
-               # del self.classes[ pos1 ]
                 self.classes[ cc1 ] = pos2
-            #print("mutation")
-         #   print('leng', len(self.classes.keys()))
             self.CalculateFitness()
 
     # Calculates fitness value of chromosome
@@ -402,45 +375,21 @@ class Schedule:
         daySize = DAY_HOURS * numberOfRooms
 
         ci = 0
-       # print("len of self classes: ", len(self.classes))
-        #    self.criteria = [None] * len(self.classes.keys())
-          #  self.slots = [x for x in self.slots if x is not None]
-            # check criterias and calculate scores for each class in schedule
-            #print("slots:", len(self.slots))
-##            for temp in range(len(self.slots)):
-##                try:
-##                    if self.slots[temp] == None:
-##                        print("temp", temp)
-##                        del self.slots[temp]
-##                except IndexError:
-##                    pass
-            #print("slots:", self.slots)
-            #print(len(self.criteria))
-       # print("len", len(self.classes), len(self.criteria))
-       # print("self.classes", self.classes)
-      #  print("len of classes", len(self.classes.keys()))
+
         for i in self.classes.keys():
-            #print('ci: ', i)
             # coordinate of time-space slot
             p = self.classes[ i ]
             day = p // daySize
             time = p % daySize
             room = time // DAY_HOURS
-           # print("time: ", time, p, daySize)
             time = time % DAY_HOURS
 
-           # print("aaaaaaaaaa", p, day * daySize + time, day, daySize, time) # 66 54 2 24 6
-
-            #print('day', p, day, daySize, time, room, DAY_HOURS)
-            #print("classes", i, self.classes[i])
             dur = i.GetDuration()
-        #    print("self.slots[i] ", i, dur)
 
             # check for room overlapping of classes
             ro = False
             for j in range( dur - 1, -1, -1 ):
-               # print("P + J is: ", p + j)
-                if len( self.slots[ p + j ] ) > 1: # not self.slots[p + j] is None and
+                if len( self.slots[ p + j ] ) > 1:
                     ro = True
                     break
 
@@ -448,16 +397,11 @@ class Schedule:
             if not ro:
                 score = score + 1
 
-            #print(self.criteria[ci + 0])
-           # print("ci: ", ci)
             self.criteria[ ci + 0 ] = not ro
                 
             cc = i
             r = instance.GetRoomById( room )
-            #print("r: ", instance, room)
             # does current room have enough seats
-            #print("number of seats: ", r.GetNumberOfSeats())
-           # print("ci = ", ci)
             self.criteria[ ci + 1 ] = r.GetNumberOfSeats() >= cc.GetNumberOfSeats()
             if self.criteria[ ci + 1 ]:
                 score = score + 1
@@ -471,7 +415,6 @@ class Schedule:
             go = False
             # check overlapping of classes for professors and student groups
             t = day * daySize + time
-           # print('vsyo budet', day, daySize, time, t, len(self.slots))
             breakPoint = False
             for k in range( numberOfRooms, 0, -1 ):
                 if breakPoint == True: break
@@ -479,7 +422,6 @@ class Schedule:
                 for l in range( dur - 1, -1, -1 ):
                     if breakPoint == True: break
                     # check for overlapping with other classes at same time
-                   # print("slots", len(self.slots), t, k, l)
                     cl = self.slots[ t + l ]
                     if not cl is None:
                         for it in cl:
@@ -509,12 +451,8 @@ class Schedule:
             ci += 5
 
         # calculate fitness value based on score
-        
         self.fitness = score / ( instance.GetNumberOfCourseClasses() * DAYS_NUM )
         self.score = score
-        #if self.fitness > 0.95:
-       # print(self.fitness, score, instance.GetNumberOfCourseClasses() * DAYS_NUM)
-       # print("fitness: ", self.fitness)
 
     # Returns fitness value of chromosome
     def GetFitness(self):
@@ -522,11 +460,11 @@ class Schedule:
 
 
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import * #QWidget, QApplication
-from PyQt5.QtGui import * # QPainter, QColor, QBrush
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 
 test = "test"
-
+    
 class Example(QMainWindow):
 
     # Define a new signal called 'trigger' that has no arguments.
@@ -539,9 +477,6 @@ class Example(QMainWindow):
         
         
     def initUI(self):
-
-##        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-##        self.setVerticalScrollBarPolicy  (Qt.ScrollBarAlwaysOn)
         startAction = QAction(QIcon('start.png'), 'Start Solving', self)
         startAction.setShortcut('Ctrl+S')
         startAction.setStatusTip('Open new File')
@@ -557,53 +492,95 @@ class Example(QMainWindow):
         openAction.setStatusTip('Open new File')
         openAction.triggered.connect(self.showDialog)
 
+        inputAction = QAction(QIcon('open.png'), 'Professor', self)
+        inputAction.setShortcut('Ctrl+P')
+        inputAction.setStatusTip('Set professor name')
+        inputAction.triggered.connect(self.inputDialog)
+
         self.statusBar()
 
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(openAction)
         fileMenu.addAction(startAction)
+        fileMenu.addAction(inputAction)
         fileMenu.addAction(exitAction)
-        
+
+##        palette = QPalette()
+##        palette.setColor(QPalette.Background, QColor(255, 239, 213))
+##        self.setPalette(palette)
+        global professor
+        professor = ''
         self.setGeometry(300, 400, 600, 600)
-        self.setWindowTitle('Schedule - Genetic Algorithm - Armine')    
+        self.setWindowTitle('Schedule - Genetic Algorithm')
+
         self.show()
+
+    def inputDialog(self):
+        print("show dialog")
+        text, ok = QInputDialog.getText(self, 'Input Dialog', 
+            "Enter professor's name:")
+        global professor
+        professor = str(text)
+        print(str(text))
 
     def showDialog(self):
         global fname
-        global instance
         fname = QFileDialog.getOpenFileName(self, 'Open file')
         if fname[0]:
-            instance = Configuration()
-            instance.Parsefile(fname[0])
-            #print("by id", instance.GetStudentsGroupById('1').GetName())
-            #print(str(instance.GetStudentsGroupById(1).GetName()))
-          #  print("ssssssss", aaa)
-          #  k = 0
-          #  print("k is 0: ", instance.GetStudentsGroupById(str(k + 1)).GetName())
-            global test
-            test = "aaa"
-            global best
-            best = False
+            t = Thread(target=self.dial)
+            t.start()
+            t.join()
+ 
+
+    def dial(self):
+        from time import sleep
+        global instance
+        instance = Configuration()
+        instance.Parsefile(fname[0])
+        # make prototype of chromosomes
+        global test
+        test = "aaa"
+        global best
+        best = False
+         
+    def start(self):
+       t1 = Thread(target=self.alg)
+       t1.start()
+       t1.join()
+
+    def alg(self):
+        prototype = Schedule(2, 2, 80, 3)
+        # make new global instance of algorithm using chromosome prototype
+        instance = Algorithm(100, 8, 5, prototype )
+        global bestChromosome
+        bestChromosome = instance.Start()
+        global best
+        best = True
+
 
     def paintEvent(self, e):
-        print("paint event")
+        print("paint event", test)
         if test == "test":
             return
-        qp = QPainter()
+        qp = QPainter(self)
         qp.begin(self)
-        self.drawRectangles(qp)
+        if professor != '':
+            self.drawProfessor(qp)
+        else:
+            self.drawRectangles(qp)
         qp.end()
 
-    def drawRectangles(self, qp):
+
+    def drawProfessor(self, qp):
         DAYS_NUM = 5
         DAY_HOURS = 4
         
         GROUP_CELL_WIDTH = 95
-        GROUP_CELL_HEIGHT = 50
+        GROUP_CELL_HEIGHT = 60
 
         GROUP_MARGIN_WIDTH = 50
-        GROUP_MARGIN_HEIGHT = 50
+        GROUP_MARGIN_HEIGHT = 40
 
         GROUP_COLUMN_NUMBER = DAYS_NUM + 1
         GROUP_ROW_NUMBER = DAY_HOURS + 1
@@ -612,7 +589,101 @@ class Example(QMainWindow):
         GROUP_TABLE_HEIGHT = GROUP_CELL_HEIGHT * GROUP_ROW_NUMBER + GROUP_MARGIN_HEIGHT
 
         numberOfGroups = instance.GetNumberOfStudentGroups()
-        print("bbb", DAYS_NUM, DAY_HOURS, numberOfGroups)
+
+        for i in range(0, GROUP_COLUMN_NUMBER):
+            for j in range(0, GROUP_ROW_NUMBER):
+
+                WidthRect = 95
+                HeightRect = 60
+                
+                XRect = GROUP_MARGIN_WIDTH + i * GROUP_CELL_WIDTH 
+                YRect = GROUP_MARGIN_HEIGHT + j * GROUP_CELL_HEIGHT
+                
+                font = qp.font()
+                font.setWeight(QFont.Bold)
+                font.setPointSize(12)
+                font.setFamily("Cyrillic")
+                qp.setFont(font)
+                
+                if i == 0 or j == 0:
+                    r1 = QRect (XRect, YRect, WidthRect, HeightRect)
+
+                if i == 0 and j == 0:
+                    font = qp.font()
+                    font.setPointSize(10)
+                    font.setBold(False)
+                    font.setFamily("Cyrillic")
+                    qp.setFont(font)
+                    qp.drawText(r1, Qt.AlignCenter, "Professor:\n" + professor)
+                    qp.drawRect(XRect, YRect, WidthRect, HeightRect)
+                    
+
+                if i == 0 and j > 0:
+                    qp.drawText(r1, Qt.AlignCenter, str(i + j))
+                    qp.drawRect(XRect, YRect, WidthRect, HeightRect)
+
+                if j == 0 and i > 0:
+                    days = ["MON", "TUE", "WED", "THR", "FRI"]
+                    print("draw text")
+                    qp.drawText(r1, Qt.AlignCenter, str(days[i - 1]))
+                    qp.drawRect(XRect, YRect, WidthRect, HeightRect)
+                    
+        font = qp.font()
+        font.setPointSize(10)
+        font.setBold(False)
+        font.setFamily("Cyrillic")
+        qp.setFont(font)
+        qp.setPen(Qt.black)
+        qp.setTextWidth = 70
+        
+        classes = bestChromosome.GetClasses()
+        ci = 0
+        numberOfRooms = instance.GetNumberOfRooms()
+        for it in classes.keys():
+            c = it
+            p = int ( classes[ it ] )
+
+            t = p % ( numberOfRooms * DAY_HOURS )
+            d = p // ( numberOfRooms * DAY_HOURS ) + 1
+            r = t // DAY_HOURS
+            t = t % DAY_HOURS + 1
+
+            grNumber = 0
+            info = ''
+            if c.GetProfessor().GetName() == professor:
+                # Create corresponding rectangle
+                XRect = GROUP_MARGIN_WIDTH + d * GROUP_CELL_WIDTH
+                YRect = GROUP_MARGIN_HEIGHT + t * GROUP_CELL_HEIGHT
+                WidthRect = 95
+                HeightRect = c.GetDuration() * GROUP_CELL_HEIGHT
+                
+                info = c.GetCourse().GetName() + "\n"  + c.GetGroups()[0].GetName() + "\n"
+                info += instance.GetRoomById(r).GetName() + " "
+                if c.IsLabRequired():
+                    info += "Lab"
+
+                rect = QRect (XRect, YRect, WidthRect, HeightRect)
+                qp.drawText(rect, Qt.TextWordWrap | Qt.AlignVCenter | Qt.AlignHCenter, info)
+                qp.drawRect(XRect, YRect, WidthRect, HeightRect)
+                
+    def drawRectangles(self, qp):
+        print("draw rect")
+        DAYS_NUM = 5
+        DAY_HOURS = 4
+        
+        GROUP_CELL_WIDTH = 95
+        GROUP_CELL_HEIGHT = 60
+
+        GROUP_MARGIN_WIDTH = 50
+        GROUP_MARGIN_HEIGHT = 40
+
+        GROUP_COLUMN_NUMBER = DAYS_NUM + 1
+        GROUP_ROW_NUMBER = DAY_HOURS + 1
+
+        GROUP_TABLE_WIDTH = GROUP_CELL_WIDTH * GROUP_COLUMN_NUMBER + GROUP_MARGIN_WIDTH
+        GROUP_TABLE_HEIGHT = GROUP_CELL_HEIGHT * GROUP_ROW_NUMBER + GROUP_MARGIN_HEIGHT
+
+        numberOfGroups = instance.GetNumberOfStudentGroups()
         
         for k in range(0, numberOfGroups):
             for i in range(0, GROUP_COLUMN_NUMBER):
@@ -622,7 +693,7 @@ class Example(QMainWindow):
                     m = k // 2
 
                     WidthRect = 95
-                    HeightRect = 50
+                    HeightRect = 60
                     
                     XRect = GROUP_MARGIN_WIDTH + i * GROUP_CELL_WIDTH  + l * WidthRect *(GROUP_COLUMN_NUMBER + 1)
                     YRect = GROUP_MARGIN_HEIGHT + j * GROUP_CELL_HEIGHT + m * HeightRect * (GROUP_ROW_NUMBER + 1)
@@ -630,14 +701,17 @@ class Example(QMainWindow):
                     font = qp.font()
                     font.setWeight(QFont.Bold)
                     font.setPointSize(12)
+                    font.setFamily("Cyrillic")
                     qp.setFont(font)
-
+                    
                     if i == 0 or j == 0:
                         r1 = QRect (XRect, YRect, WidthRect, HeightRect)
 
                     if i == 0 and j == 0:
                         font = qp.font()
                         font.setPointSize(10)
+                        font.setBold(False)
+                        font.setFamily("Cyrillic")
                         qp.setFont(font)
                         qp.drawText(r1, Qt.AlignCenter, "Group: " + instance.GetStudentsGroupById(str(k + 1)).GetName())
                         qp.drawRect(XRect, YRect, WidthRect, HeightRect)
@@ -649,25 +723,23 @@ class Example(QMainWindow):
 
                     if j == 0 and i > 0:
                         days = ["MON", "TUE", "WED", "THR", "FRI"]
+                        print("draw text")
                         qp.drawText(r1, Qt.AlignCenter, str(days[i - 1]))
                         qp.drawRect(XRect, YRect, WidthRect, HeightRect)
 
         if best:
             font = qp.font()
             font.setPointSize(10)
+            font.setBold(False)
+            font.setFamily("Cyrillic")
             qp.setFont(font)
+         #   qp.setBrush(QColor(255, 255, 224))
+            qp.setPen(Qt.black)
             qp.setTextWidth = 70
-            print("besssssssssssst", bestChromosome)
-##            fit.Format( "Fitness: %f, Generation: %d", _schedule->GetFitness(),
-##			Algorithm::GetInstance().GetCurrentGeneration() );
-
-            print("classes")
-            print(bestChromosome.classes)
+            
             classes = bestChromosome.GetClasses()
-            print("2 ", classes)
             ci = 0
             numberOfRooms = instance.GetNumberOfRooms()
-            print("numberOfRooms: ", numberOfRooms)
             for it in classes.keys():
                 c = it
                 p = int ( classes[ it ] )
@@ -675,7 +747,6 @@ class Example(QMainWindow):
                 t = p % ( numberOfRooms * DAY_HOURS )
                 d = p // ( numberOfRooms * DAY_HOURS ) + 1
                 r = t // DAY_HOURS
-                print("asdffdsfdfd", t, DAY_HOURS, instance.GetRoomById(r).GetName())
                 t = t % DAY_HOURS + 1
 
                 grNumber = 0
@@ -683,52 +754,32 @@ class Example(QMainWindow):
                 for k in range(0, numberOfGroups):
                     for l in c.GetGroups():
                         if l == instance.GetStudentsGroupById(str(k + 1)):
-                            print("student group is: ", instance.GetStudentsGroupById(str(k + 1)).GetName(), k)
                             grNumber = k
 
                             l = grNumber % 2
                             m = grNumber // 2
 
                             # Create corresponding rectangle
-                            XRect = l * WidthRect *(GROUP_COLUMN_NUMBER + 1) + GROUP_MARGIN_WIDTH + d * GROUP_CELL_WIDTH
-                            YRect = GROUP_TABLE_HEIGHT * m + GROUP_MARGIN_HEIGHT + t * GROUP_CELL_HEIGHT
+                            XRect = l * WidthRect * (GROUP_COLUMN_NUMBER + 1) + GROUP_MARGIN_WIDTH + d * GROUP_CELL_WIDTH
+                            YRect = m * HeightRect * (GROUP_ROW_NUMBER + 1) + GROUP_MARGIN_HEIGHT + t * GROUP_CELL_HEIGHT
                             WidthRect = 95
                             HeightRect = c.GetDuration() * GROUP_CELL_HEIGHT
 
                             info = c.GetCourse().GetName() + "\n" + c.GetProfessor().GetName() + "\n"
                             info += instance.GetRoomById(r).GetName() + " "
-                            print("course: ", c.GetCourse().GetName(), c.IsLabRequired())
                             if c.IsLabRequired():
-                                info += "Lab\n"
+                                info += "Lab"
 
                             rect = QRect (XRect, YRect, WidthRect, HeightRect)
                             qp.drawText(rect, Qt.TextWordWrap | Qt.AlignVCenter | Qt.AlignHCenter, info)
                             qp.drawRect(XRect, YRect, WidthRect, HeightRect)
-            test = "aaa" 
-            
-
-    def start(self):
-        # make prototype of chromosomes
-        print("get instance")
-        prototype = Schedule(2, 2, 80, 3)
-        # make new global instance of algorithm using chromosome prototype
-        print("schedule")
-        instance = Algorithm(100, 8, 5, prototype )
-        global bestChromosome
-        bestChromosome = instance.Start()
-        global best
-        best = True
+            test = "aaa"
         
+
+    
         
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     ex = Example()
     sys.exit(app.exec_())
-
-##global instance
-##instance = Configuration()
-##instance.Parsefile("ase.cfg")
-##prototype = Schedule(2, 2, 80, 3)
-##instanceObj = Algorithm(100, 8, 5, prototype )
-##bestChromosome = instanceObj.Start()
