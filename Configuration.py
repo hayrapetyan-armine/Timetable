@@ -27,7 +27,6 @@ class Configuration:
 
     # Parse file and store parsed object
     def Parsefile(self, fileName):
-       # print("print parsefile")
         # clear previously parsed objects
         self.professors = {}
         self.studentGroups = {}
@@ -66,13 +65,6 @@ class Configuration:
                         self.courseClasses.append(c)
         input.close()
         self.isEmpty = False
-        print("parse: ", self.professors)
-        print("groups: ", self.studentGroups)
-        print("courses: ", self.courses)
-        print("rooms: ", self.rooms)
-        print("courseclasses: ", self.courseClasses)
-       # return self.studentGroups;
-       # print("asdffffff", len(self.courseClasses))
         
     # Returns pointer to professor with specified ID
     # If there is no professor with such ID method returns NULL
@@ -83,21 +75,17 @@ class Configuration:
     
     # Returns number of parsed professors
     def GetNumberOfProfessors(self):
-       # print('professors', self.professors.keys())
         return len(self.professors.keys())
 
     # Returns pointer to student group with specified ID
     # If there is no student group with such ID method returns NULL
     def GetStudentsGroupById(self, id):
-      #  print("in student groups", id)
         if id in self.studentGroups.keys():
-        #    print("value: ", self.studentGroups[id])
             return self.studentGroups[id]
         return None    
         
     # Returns number of parsed student groups
     def GetNumberOfStudentGroups(self):
-       # print('student groups', self.studentGroups.keys())
         return len(self.studentGroups)
     
     # Returns pointer to course with specified ID
@@ -109,7 +97,6 @@ class Configuration:
 
     # Returns number of parsed courses
     def GetNumberOfCourses(self):
-       # print('courses', self.courses.keys())
         return len(self.courses)
     
     # Returns pointer to room with specified ID
@@ -121,7 +108,6 @@ class Configuration:
     
     # Returns number of parsed rooms
     def GetNumberOfRooms(self):
-      #  print('rooms', self.rooms.keys())
         return len(self.rooms)
     
     # Returns reference to list of parsed classes
@@ -130,7 +116,6 @@ class Configuration:
     
     # Returns number of parsed classes
     def GetNumberOfCourseClasses(self):
-      #  print('course classes', len(self.courseClasses))
         return len(self.courseClasses)
     
     # Returns TRUE if configuration is not parsed yet
@@ -204,7 +189,6 @@ class Configuration:
         # make object and return pointer to it
         if id == 0:
             return None
-       # print("name", id, name, number)
         return StudentsGroup.StudentsGroup( id, name, number )
 
     # Reads course's data from config file, makes object and returns pointer to it
@@ -275,7 +259,6 @@ class Configuration:
         if number == 0:
             return None
 
-        print("lab: ", lab, name)
         return Room.Room( name, lab, number )
     
     # Reads class' data from config file, makes object and returns pointer to it
@@ -326,12 +309,3 @@ class Configuration:
         
         # make object and return pointer to it
         return CourseClass.CourseClass( p, c, groups, lab, dur )
-
-
-#configFile = Configuration.GetInstance()
-#configFile.Parsefile('Test.cfg')
-##print("111", configFile.GetNumberOfProfessors())
-##print("222", configFile.GetNumberOfStudentGroups())
-##print("333", configFile.GetNumberOfCourses())
-##print("444", configFile.GetNumberOfRooms())
-##print("555", configFile.GetNumberOfCourseClasses())
