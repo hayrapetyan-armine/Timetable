@@ -2,7 +2,6 @@ class StudentsGroup:
 
     # Initializes student group data
     def __init__(self, id, name, numberOfStudents):
-        print("numberof", id, name, numberOfStudents)
         self.id = id
         self.name = name
         self.numberOfStudents = numberOfStudents

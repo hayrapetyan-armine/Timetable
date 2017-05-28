@@ -11,6 +11,7 @@ import copy
 import random
 from random import randint
 from threading import Thread
+import time
 
 # Genetic algorithm
 class Algorithm:
@@ -779,7 +780,10 @@ class Example(QMainWindow):
     
         
 if __name__ == '__main__':
-    
+
+    time.sleep(10)
     app = QApplication(sys.argv)
     ex = Example()
     sys.exit(app.exec_())
+    
+time.sleep(10)

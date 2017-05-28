@@ -1,6 +1,5 @@
 import CourseClass
 import Configuration
-#from Configuration import Configuration
 import copy
 from random import randint
 import Algorithm
@@ -62,7 +61,6 @@ class Schedule:
                         # insert in class table of chromosome
                         newChromosome.classes[pos] = c[it]
 
-                print("classes", newChromosome.classes)
                 newChromosome.CalculateFitness()
 
                 # return smart pointer
